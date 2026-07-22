@@ -1,0 +1,15 @@
+# Workspace/IDE configurations
+.agents/
+.gemini/
+.vscode/
+.idea/
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary files
+*.log
+tmp/
+temp/

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS Virtual Training Portal | Simulator Directory</title>
+  <meta name="description" content="AEGIS Virtual Training Simulation platform. Choose between the A-Frame Electrical Safety Laboratory or the Three.js Space Mission Cockpit.">
+  <link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+
+  <!-- Dynamic Animated Backgrounds -->
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+  
+  <div class="glow-ambiance glow-cyan"></div>
+  <div class="glow-ambiance glow-orange"></div>
+
+  <!-- Main Container -->
+  <div class="portal-container">
+    
+    <!-- Title Header -->
+    <header class="portal-header">
+      <div class="portal-tagline">Simulation Gateway</div>
+      <h1 class="portal-title">Virtual Training Portal</h1>
+      <p class="portal-subtitle">Master critical protocols and safety operations in our high-fidelity WebXR and WebGL emergency response simulators.</p>
+    </header>
+
+    <!-- Simulators Grid -->
+    <div class="portal-grid">
+      
+      <!-- Card 1: Electrical Safety Laboratory -->
+      <article class="sim-card card-electrical" id="card-electrical">
+        <div class="card-meta">
+          <span class="badge-tech">A-FRAME / WEBXR</span>
+          <span class="badge-status status-in-progress">MODULES: 2/7 READY</span>
+        </div>
+        <div>
+          <div class="card-icon">⚡</div>
+          <h2 class="card-title">Electrical Safety Lab</h2>
+          <p class="card-desc">Practice lockout/tagout (LOTO) protocols, wear appropriate dielectric protective equipment (PPE), verify electrical voltages, and execute cardiac rescue procedures on an injured co-worker inside a 3D workshop.</p>
+        </div>
+        <button class="btn-launch" id="btn-launch-electrical">
+          LAUNCH SIMULATOR <span class="btn-arrow">&rarr;</span>
+        </button>
+      </article>
+
+      <!-- Card 2: Space Mission Emergency Cockpit -->
+      <article class="sim-card card-space" id="card-space">
+        <div class="card-meta">
+          <span class="badge-tech">THREE.JS / WEBGL</span>
+          <span class="badge-status status-ready">15 SCENARIOS READY</span>
+        </div>
+        <div>
+          <div class="card-icon">🚀</div>
+          <h2 class="card-title">Space Mission Failure</h2>
+          <p class="card-desc">Step into the cockpit as an astronaut facing structural micro-fractures, telemetry emergencies, oxygen system leaks, and avionic failures. Repair circuits, seal hulls, and pass safety quizzes to unlock your Flight Readiness Certificate.</p>
+        </div>
+        <button class="btn-launch" id="btn-launch-space">
+          LAUNCH SIMULATOR <span class="btn-arrow">&rarr;</span>
+        </button>
+      </article>
+
+    </div>
+
+    <!-- Portal Footer -->
+    <footer class="portal-footer">
+      AEGISSIM TRAINING MULTIVERSE &copy; 2026 &middot; STANDARDS COMPLIANT SECURE SIMULATION
+    </footer>
+  </div>
+
+  <!-- Audio Synthesis & Dynamic Cursor Lighting Script -->
+  <script>
+    // -------------------------------------------------------------
+    // Web Audio Synthesizer for UI Feedback
+    // -------------------------------------------------------------
+    class WebAudioSynth {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (this.ctx) return;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContextClass();
+        } catch (e) {
+          console.warn("AudioContext not supported by this browser.", e);
+        }
+      }
+
+      resume() {
+        this.init();
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Synthesize a brief hover chirp
+      playHover() {
+        this.resume();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.05);
+
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.06);
+      }
+
+      // Synthesize a full selection chime
+      playLaunch() {
+        this.resume();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const freqs = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+        const duration = 0.15;
+
+        freqs.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.04));
+
+          gain.gain.setValueAtTime(0, now + (idx * 0.04));
+          gain.gain.linearRampToValueAtTime(0.12, now + (idx * 0.04) + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.04) + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + (idx * 0.04));
+          osc.stop(now + (idx * 0.04) + duration + 0.1);
+        });
+      }
+    }
+
+    const synth = new WebAudioSynth();
+
+    // -------------------------------------------------------------
+    // Cursor Position Tracking (Glow follow reflection)
+    // -------------------------------------------------------------
+    const cards = document.querySelectorAll('.sim-card');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+
+      // Sound trigger on hover
+      card.addEventListener('mouseenter', () => {
+        synth.playHover();
+      });
+    });
+
+    // -------------------------------------------------------------
+    // Launcher Actions and Page Transitions
+    // -------------------------------------------------------------
+    const transitionAndNavigate = (url) => {
+      synth.playLaunch();
+      
+      // Page fade transition
+      document.body.style.transition = 'opacity 0.6s ease';
+      document.body.style.opacity = '0';
+      
+      setTimeout(() => {
+        window.location.href = url;
+      }, 550);
+    };
+
+    document.getElementById('card-electrical').addEventListener('click', (e) => {
+      transitionAndNavigate('electrical-safety/index.html');
+    });
+
+    document.getElementById('card-space').addEventListener('click', (e) => {
+      transitionAndNavigate('space-mission-simulator/index.html');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electrical Lab - VR Simulator</title>
+  <!-- A-Frame WebXR Library -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <!-- A-Frame Extras for Gamepad/Keyboard movement controls -->
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Prevent default behaviors on canvas container */
+    body {
+      margin: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    a-scene {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* VR specific overlays */
+    .vr-overlay-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .vr-overlay-panel {
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Heads Up Display (HUD) & 2D Interaction Overlays -->
+  <div class="hud-container">
+    <div class="hud-header">
+      <div class="hud-left">
+        <button class="btn btn-secondary" id="btn-back-menu" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          &larr; Exit
+        </button>
+        <div class="hud-panel">
+          <span class="icon">&#9889;</span>
+          <span id="hud-module-title">Module: Loading...</span>
+        </div>
+      </div>
+      
+      <div class="hud-right">
+        <div class="hud-panel">
+          <span>XP:</span>
+          <span id="hud-xp" style="color: var(--accent-cyan);">0</span>
+        </div>
+        <button class="btn btn-secondary" id="btn-reset-module" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          Restart Module
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Objectives -->
+    <div class="hud-objective" id="hud-objective-panel" style="pointer-events: auto;">
+      <h3>Objectives</h3>
+      <ul id="objective-list">
+        <!-- Will be filled by js/game.js -->
+        <li class="active">Loading simulator directives...</li>
+      </ul>
+    </div>
+
+    <!-- Bottom Actions / Dialogs -->
+    <div style="pointer-events: auto; display: flex; justify-content: center; margin-bottom: 0.5rem;">
+      <div id="instruction-board" class="glass-panel" style="display: none; max-width: 600px; padding: 1.5rem; border-radius: 8px;">
+        <h4 id="instruction-title" style="color: var(--accent-cyan); font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.5rem;">Educational Information</h4>
+        <p id="instruction-text" style="font-size: 0.95rem; line-height: 1.4; color: var(--text-primary);"></p>
+        <button class="btn" id="btn-instruction-next" style="margin-top: 1rem; padding: 0.5rem 1.5rem; font-size: 0.85rem; width: auto; margin-left: auto;">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Educational Fail / Alert Overlay (Overlay Modal) -->
+  <div class="feedback-overlay" id="feedback-overlay-card">
+    <div class="feedback-card danger" id="feedback-card-type">
+      <div class="feedback-title" id="feedback-title">DANGEROUS ACTION DETECTED</div>
+      <div class="feedback-text" id="feedback-desc">Water conducts electricity. Never use water on energized electrical fires. You could cause a catastrophic explosion and receive fatal electric shock.</div>
+      <button class="btn" id="btn-feedback-retry">Retry Scenario</button>
+    </div>
+  </div>
+
+  <!-- 3D A-Frame Scene -->
+  <a-scene 
+    renderer="antialias: true; colorManagement: true; shadowMapEnabled: true;" 
+    cursor="rayOrigin: mouse" 
+    raycaster="objects: .clickable"
+    keyboard-shortcuts="enterVR: true; exitVR: true">
+    
+    <!-- Asset Library -->
+    <a-assets>
+      <!-- Base procedural texture canvas elements or SVGs can load here if needed -->
+    </a-assets>
+
+    <!-- Sound trigger zones (Optional static ambient audio) -->
+
+    <!-- Lights & Shadows -->
+    <a-entity light="type: ambient; color: #333d4f; intensity: 0.8;"></a-entity>
+    <a-entity light="type: directional; color: #fff; intensity: 0.4; castShadow: true; shadowCameraFar: 30; shadowMapHeight: 1024; shadowMapWidth: 1024;" position="5 15 5"></a-entity>
+    
+    <!-- Red Warning Rotating Siren Light (Hidden by default, used for modules) -->
+    <a-entity id="warning-beacon" position="0 4 -5" visible="false">
+      <a-entity id="warning-bulb" geometry="primitive: cylinder; height: 0.3; radius: 0.15;" material="color: #ff3b30; emissive: #ff3b30; emissiveIntensity: 2.0; opacity: 0.85;"></a-entity>
+      <a-entity id="warning-light" light="type: point; color: #ff3b30; intensity: 0.0; distance: 10;" position="0 0.2 0"></a-entity>
+    </a-entity>
+
+    <!-- Lab spotlights -->
+    <a-entity light="type: spot; color: #00f0ff; intensity: 1.2; distance: 8; angle: 45;" position="0 4.8 0" rotation="-90 0 0"></a-entity>
+    <a-entity light="type: spot; color: #fff; intensity: 0.8; distance: 6; angle: 60;" position="-3.5 4.8 -3" rotation="-90 0 0"></a-entity>
+    <a-entity light="type: spot; color: #fff; intensity: 0.8; distance: 6; angle: 60;" position="3.5 4.8 -3" rotation="-90 0 0"></a-entity>
+
+    <!-- Camera & Player Controls -->
+    <a-entity id="rig" movement-controls="controls: gamepad, keyboard; speed: 0.15;" position="0 0 4">
+      <a-entity id="camera" camera look-controls="pointerLockEnabled: false">
+        <!-- Cursor ring for VR gaze interactions (visible only if no controllers are connected) -->
+        <a-entity 
+          cursor="fuse: true; fuseTimeout: 1500" 
+          position="0 0 -1" 
+          geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.02" 
+          material="color: #00f0ff; shader: flat; opacity: 0.7"
+          raycaster="objects: .clickable"
+          visible="true"
+          id="gaze-cursor">
+        </a-entity>
+      </a-entity>
+      <!-- VR Controllers with Laser Rays -->
+      <a-entity id="left-hand" laser-controls="hand: left" raycaster="objects: .clickable; far: 10; interval: 100" line="color: #00f0ff; opacity: 0.75"></a-entity>
+      <a-entity id="right-hand" laser-controls="hand: right" raycaster="objects: .clickable; far: 10; interval: 100" line="color: #00f0ff; opacity: 0.75"></a-entity>
+    </a-entity>
+
+    <!-- Environment Structure (12 x 12 x 5 room) -->
+    <!-- Floor: Metallic Checkerboard grid -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="12" height="12" material="color: #121824; roughness: 0.7; metalness: 0.85;" shadow="receive: true"></a-plane>
+    <!-- Ceiling: Industrial trusses panel -->
+    <a-plane position="0 5 0" rotation="90 0 0" width="12" height="12" material="color: #0a0d13; roughness: 0.9; metalness: 0.3;"></a-plane>
+    
+    <!-- Walls (Concrete panels) -->
+    <a-box position="0 2.5 -6" width="12" height="5" depth="0.2" material="color: #242b35; roughness: 0.9; metalness: 0.1;" shadow="receive: true; cast: false"></a-box> <!-- North -->
+    <a-box position="0 2.5 6" width="12" height="5" depth="0.2" material="color: #242b35; roughness: 0.9; metalness: 0.1;"></a-box> <!-- South -->
+    <a-box position="-6 2.5 0" rotation="0 90 0" width="12" height="5" depth="0.2" material="color: #242b35; roughness: 0.9; metalness: 0.1;" shadow="receive: true; cast: false"></a-box> <!-- West -->
+    <a-box position="6 2.5 0" rotation="0 -90 0" width="12" height="5" depth="0.2" material="color: #242b35; roughness: 0.9; metalness: 0.1;" shadow="receive: true; cast: false"></a-box> <!-- East -->
+
+    <!-- Industrial ceiling trusses/beams -->
+    <a-box position="0 4.8 0" width="12" height="0.15" depth="0.3" material="color: #1b212c; roughness: 0.6; metalness: 0.8;"></a-box>
+    <a-box position="0 4.8 -3" width="12" height="0.15" depth="0.3" material="color: #1b212c; roughness: 0.6; metalness: 0.8;"></a-box>
+    <a-box position="0 4.8 3" width="12" height="0.15" depth="0.3" material="color: #1b212c; roughness: 0.6; metalness: 0.8;"></a-box>
+
+    <!-- Lab Workbench Table (Station for Intro, PPE selection) -->
+    <a-entity id="workbench" position="0 0 -2.5">
+      <!-- Table top -->
+      <a-box position="0 0.8 0" width="2.4" height="0.08" depth="1.0" material="color: #1c2638; roughness: 0.4; metalness: 0.7;" shadow="cast: true; receive: true"></a-box>
+      <!-- Table Legs -->
+      <a-box position="-1.1 0.4 -0.4" width="0.1" height="0.8" depth="0.1" material="color: #1b212c; metalness: 0.9;"></a-box>
+      <a-box position="1.1 0.4 -0.4" width="0.1" height="0.8" depth="0.1" material="color: #1b212c; metalness: 0.9;"></a-box>
+      <a-box position="-1.1 0.4 0.4" width="0.1" height="0.8" depth="0.1" material="color: #1b212c; metalness: 0.9;"></a-box>
+      <a-box position="1.1 0.4 0.4" width="0.1" height="0.8" depth="0.1" material="color: #1b212c; metalness: 0.9;"></a-box>
+
+      <!-- PPE Selection Items (Visible and clickable in Module 2) -->
+      <a-entity id="ppe-items-group" visible="false" position="0 0.84 0">
+        <!-- 1. Hard Hat (Correct) -->
+        <a-entity id="ppe-item-hat" class="clickable" position="-0.9 0 0">
+          <a-sphere radius="0.1" theta-length="90" rotation="0 0 0" material="color: #f59e0b; roughness: 0.3;"></a-sphere>
+          <a-plane width="0.25" height="0.22" rotation="-90 0 0" material="color: #f59e0b; roughness: 0.3;"></a-plane>
+          <a-text value="Hard Hat" align="center" position="0 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 2. Insulated Gloves (Correct) -->
+        <a-entity id="ppe-item-gloves-ins" class="clickable" position="-0.6 0 0">
+          <a-box width="0.08" height="0.03" depth="0.16" material="color: #1e293b; roughness: 0.8;"></a-box>
+          <a-box width="0.08" height="0.03" depth="0.16" position="0.09 0 0" material="color: #1e293b; roughness: 0.8;"></a-box>
+          <a-text value="Insulated\nGloves" align="center" position="0.045 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 3. Standard Leather Gloves (Incorrect) -->
+        <a-entity id="ppe-item-gloves-std" class="clickable" position="-0.3 0 0">
+          <a-box width="0.08" height="0.03" depth="0.16" material="color: #854d0e; roughness: 0.8;"></a-box>
+          <a-box width="0.08" height="0.03" depth="0.16" position="0.09 0 0" material="color: #854d0e; roughness: 0.8;"></a-box>
+          <a-text value="Leather\nGloves" align="center" position="0.045 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 4. Face Shield (Correct) -->
+        <a-entity id="ppe-item-shield" class="clickable" position="0 0 0">
+          <a-torus radius="0.07" radius-tubular="0.008" arc="180" rotation="90 0 0" material="color: #0284c7;"></a-torus>
+          <a-plane width="0.16" height="0.14" position="0 -0.06 -0.06" rotation="0 0 0" material="color: #38bdf8; opacity: 0.4; transparent: true; doubleSided: true;"></a-plane>
+          <a-text value="Face Shield" align="center" position="0 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 5. Dielectric Boots (Correct) -->
+        <a-entity id="ppe-item-boots-die" class="clickable" position="0.35 0 0">
+          <a-cylinder radius="0.05" height="0.18" material="color: #0f172a; roughness: 0.9;"></a-cylinder>
+          <a-cylinder radius="0.05" height="0.18" position="0.11 0 0" material="color: #0f172a; roughness: 0.9;"></a-cylinder>
+          <a-text value="Dielectric\nBoots" align="center" position="0.055 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 6. Standard Work Shoes (Incorrect) -->
+        <a-entity id="ppe-item-shoes-std" class="clickable" position="0.65 0 0">
+          <a-box width="0.07" height="0.06" depth="0.14" material="color: #78350f; roughness: 0.8;"></a-box>
+          <a-box width="0.07" height="0.06" depth="0.14" position="0.10 0 0" material="color: #78350f; roughness: 0.8;"></a-box>
+          <a-text value="Work Shoes" align="center" position="0.05 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- 7. Voltage Tester (Correct) -->
+        <a-entity id="ppe-item-tester" class="clickable" position="0.95 0 0">
+          <a-box width="0.06" height="0.02" depth="0.12" material="color: #ea580c; roughness: 0.4;"></a-box>
+          <a-cylinder radius="0.005" height="0.08" position="-0.015 0.01 -0.06" rotation="90 0 0" material="color: #dc2626;"></a-cylinder>
+          <a-cylinder radius="0.005" height="0.08" position="0.015 0.01 -0.06" rotation="90 0 0" material="color: #111;"></a-cylinder>
+          <a-text value="Voltage\nTester" align="center" position="0 0.16 0" scale="0.12 0.12 0.12" color="#00f0ff"></a-text>
+        </a-entity>
+
+        <!-- Confirm Button Panel in 3D -->
+        <a-entity id="ppe-confirm-btn" class="clickable" position="0 -0.02 0.4" rotation="-30 0 0">
+          <a-box width="0.5" height="0.08" depth="0.2" material="color: #0072ff; emissive: #0072ff; emissiveIntensity: 0.2;"></a-box>
+          <a-text value="CONFIRM PPE" align="center" position="0 0.05 0" rotation="-90 0 0" scale="0.16 0.16 0.16" color="#fff"></a-text>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- Main Electrical Control Panel Board (Station for LOTO) -->
+    <a-entity id="loto-panel-station" position="-3.5 0 -5.8">
+      <!-- Outer Metal Frame -->
+      <a-box position="0 1.2 0.2" width="1.2" height="1.8" depth="0.3" material="color: #3b424d; roughness: 0.5; metalness: 0.8;" shadow="cast: true; receive: true"></a-box>
+      <!-- Panel Door (Glow indicator around border) -->
+      <a-box id="loto-panel-door" position="0 1.2 0.36" width="1.0" height="1.6" depth="0.05" material="color: #2b313b; roughness: 0.4; metalness: 0.9;" shadow="cast: true"></a-box>
+      <!-- Panel Label -->
+      <a-box position="0 1.95 0.2" width="0.8" height="0.2" depth="0.02" material="color: #ffcc00; text: value: MAIN BREAKER PANEL; align: center; wrapCount: 15; color: black;"></a-box>
+    </a-entity>
+
+    <!-- Secondary Electrical Control Panel (Station for Fire Module) -->
+    <a-entity id="fire-panel-station" position="3.5 0 -5.8">
+      <!-- Outer Frame -->
+      <a-box position="0 1.2 0.2" width="1.2" height="1.8" depth="0.3" material="color: #3b424d; roughness: 0.5; metalness: 0.8;" shadow="cast: true; receive: true"></a-box>
+      <!-- Panel door -->
+      <a-box id="fire-panel-door" position="0 1.2 0.36" width="1.0" height="1.6" depth="0.05" material="color: #2b313b; roughness: 0.4; metalness: 0.9;" shadow="cast: true"></a-box>
+      <!-- Warning DANGER Sign above it -->
+      <a-box position="0 1.95 0.2" width="0.8" height="0.2" depth="0.02" material="color: #d11a2a; text: value: HIGH VOLTAGE; align: center; wrapCount: 15; color: white;"></a-box>
+      <!-- Emergency Stop Button next to this station -->
+      <a-entity id="estop-entity" position="0.8 1.2 0.3">
+        <a-box position="0 0 0" width="0.15" height="0.15" depth="0.1" material="color: #ffcc00;"></a-box>
+        <a-cylinder id="estop-button" class="clickable" position="0 0 0.06" rotation="90 0 0" radius="0.04" height="0.06" material="color: #ff3b30; roughness: 0.3; emissive: #500;"></a-cylinder>
+        <a-text value="EMERGENCY\nSTOP" align="center" position="0 0.12 0" scale="0.25 0.25 0.25" color="#ffcc00"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- Toolbox on the floor -->
+    <a-entity id="toolbox" position="-1.5 0 -3.5">
+      <a-box width="0.6" height="0.3" depth="0.3" material="color: #9a0f0f; roughness: 0.5;" shadow="cast: true"></a-box>
+      <a-box position="0 0.16 0" width="0.1" height="0.05" depth="0.35" material="color: #e5e5e5; roughness: 0.3;"></a-box> <!-- Handle -->
+    </a-entity>
+
+    <!-- Fire Extinguisher Station (Against Left Wall) -->
+    <a-entity id="extinguisher-station" position="-5.8 0 -1">
+      <a-box position="0.1 1.2 0" width="0.1" height="0.6" depth="0.4" material="color: #121824; border: 1px solid var(--accent-red);"></a-box>
+      <a-text value="FIRE STATION" align="center" rotation="0 90 0" position="0.16 1.6 0" scale="0.3 0.3 0.3" color="#ff3b30"></a-text>
+      <!-- CO2 Extinguisher (Red with Black nozzle) -->
+      <a-entity id="extinguisher-co2" class="clickable" position="0.2 0.9 -0.2">
+        <a-cylinder radius="0.07" height="0.4" material="color: #d11a2a; roughness: 0.3;"></a-cylinder>
+        <a-cylinder position="0.03 0.22 0" radius="0.01" height="0.1" material="color: #111;"></a-cylinder>
+        <a-box position="0.06 0.18 0" width="0.1" height="0.03" depth="0.05" material="color: #111;"></a-box> <!-- Black funnel nozzle -->
+        <a-text value="CO2" align="center" rotation="0 90 0" position="0.08 0 0" scale="0.15 0.15 0.15" color="#fff"></a-text>
+      </a-entity>
+      <!-- Water Extinguisher (Silver/Blue) -->
+      <a-entity id="extinguisher-water" class="clickable" position="0.2 0.9 0.2">
+        <a-cylinder radius="0.07" height="0.4" material="color: #3b82f6; roughness: 0.2;"></a-cylinder>
+        <a-cylinder position="0.03 0.22 0" radius="0.01" height="0.1" material="color: #111;"></a-cylinder>
+        <a-box position="0.06 0.18 0" width="0.1" height="0.03" depth="0.05" material="color: #3b82f6;"></a-box> <!-- Water nozzle -->
+        <a-text value="WATER" align="center" rotation="0 90 0" position="0.08 0 0" scale="0.15 0.15 0.15" color="#fff"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- Emergency Exit Door (Right wall - East) -->
+    <a-entity id="exit-door-station" position="5.8 0 2" rotation="0 -90 0">
+      <!-- Door Frame -->
+      <a-box position="0 1.25 0.1" width="1.2" height="2.5" depth="0.2" material="color: #1c222c;"></a-box>
+      <!-- Door Panel -->
+      <a-box id="exit-door" position="0 1.2 0.15" width="1.0" height="2.3" depth="0.06" material="color: #34c759; roughness: 0.7;"></a-box>
+      <!-- Glowing EXIT Sign -->
+      <a-box position="0 2.5 0.2" width="0.6" height="0.2" depth="0.05" material="color: #0d121c; text: value: EXIT; align: center; color: #34c759; wrapCount: 10;"></a-box>
+    </a-entity>
+
+    <!-- Safety and Warning Posters on West Wall -->
+    <a-entity id="safety-posters" position="-5.8 1.5 2" rotation="0 90 0">
+      <!-- Poster 1: PPE Requirements -->
+      <a-plane position="-1.5 0 0.1" width="1.2" height="1.6" material="color: #121824; shader: flat;"></a-plane>
+      <a-box position="-1.5 0 0.11" width="1.1" height="1.5" depth="0.01" material="color: #0b3c5d; text: value: DANGER\nPPE MUST BE WORN\n\n- SAFETY HELMET\n- INSULATED GLOVES\n- PROTECTIVE SHIELD\n- DIELECTRIC SHOES; align: center; wrapCount: 20; color: #fff;"></a-box>
+      <!-- Poster 2: CPR Guide -->
+      <a-plane position="1.5 0 0.1" width="1.2" height="1.6" material="color: #121824; shader: flat;"></a-plane>
+      <a-box position="1.5 0 0.11" width="1.1" height="1.5" depth="0.01" material="color: #008744; text: value: FIRST AID\nSHOCK RESCUE GUIDE\n\n1. SHUT OFF POWER\n2. DISLODGE VICTIM WITH INSULATOR\n3. DO NOT TOUCH WITH BARE HANDS\n4. CALL FOR EMERGENCY\n5. START CPR; align: center; wrapCount: 22; color: #fff;"></a-box>
+    </a-entity>
+
+    <!-- NPC Worker (Injured coworker, used in Shock rescue module) -->
+    <!-- Positioned next to high voltage panel -->
+    <a-entity id="npc-worker" position="3.5 0 -4.3" visible="false">
+      <!-- Legs (Cylinder) -->
+      <a-cylinder position="-0.15 0.4 0" radius="0.08" height="0.8" material="color: #1e3a8a;"></a-cylinder>
+      <a-cylinder position="0.15 0.4 0" radius="0.08" height="0.8" material="color: #1e3a8a;"></a-cylinder>
+      <!-- Torso (Box) -->
+      <a-box id="npc-torso" position="0 1.1 0" width="0.5" height="0.6" depth="0.25" material="color: #d97706;"></a-box> <!-- Orange vest -->
+      <!-- Arms -->
+      <a-cylinder position="-0.3 1.1 0.1" rotation="45 0 0" radius="0.06" height="0.5" material="color: #e5c158;"></a-cylinder>
+      <a-cylinder id="npc-right-arm" position="0.3 1.1 -0.1" rotation="-45 0 0" radius="0.06" height="0.5" material="color: #e5c158;"></a-cylinder>
+      <!-- Head -->
+      <a-sphere position="0 1.5 0" radius="0.16" material="color: #e5c158;"></a-sphere>
+      <!-- Hard Hat -->
+      <a-entity position="0 1.62 0">
+        <a-sphere radius="0.17" material="color: #f59e0b;"></a-sphere>
+        <a-box position="0 -0.05 0.05" width="0.38" height="0.02" depth="0.38" material="color: #f59e0b;"></a-box>
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- Load Scripts -->
+  <script src="../js/scoring.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VR Electrical Safety Training</title>
+  <!-- SEO Tags -->
+  <meta name="description" content="An immersive WebXR electrical safety training simulator built for engineering students and professional electricians. Learn LOTO, hazard mitigation, and shock rescue.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Background Animated Elements -->
+  <div class="bg-grid"></div>
+  <div class="bg-light-bars">
+    <div class="light-bar"></div>
+    <div class="light-bar"></div>
+    <div class="light-bar"></div>
+  </div>
+
+  <!-- Main Menu Interface -->
+  <main class="glass-panel" id="main-menu-panel">
+    <h1>VR Electrical Safety</h1>
+    <p class="subtitle">Training Simulator</p>
+    
+    <div class="btn-group">
+      <button class="btn" id="btn-start">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Start Training
+      </button>
+      <button class="btn btn-secondary" id="btn-instructions">Instructions</button>
+      <button class="btn btn-secondary" id="btn-progress">Training Progress</button>
+      <button class="btn btn-secondary" id="btn-settings">Settings</button>
+      <button class="btn btn-secondary" id="btn-about">About</button>
+    </div>
+  </main>
+
+  <!-- Instructions Overlay -->
+  <div class="overlay" id="instructions-overlay">
+    <div class="glass-panel overlay-content">
+      <button class="close-btn" aria-label="Close modal">&times;</button>
+      <h2>Training Instructions</h2>
+      <p class="subtitle" style="margin-bottom: 1rem;">How to Interact</p>
+      
+      <div style="text-align: left; line-height: 1.6; margin-bottom: 2rem;">
+        <h3 style="color: var(--accent-cyan); margin-top: 1rem;">Controls (Desktop Mode)</h3>
+        <ul>
+          <li><strong>Movement:</strong> Use <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> keys or Arrow keys to walk around the room.</li>
+          <li><strong>Look Around:</strong> Hold Left-Click and drag mouse inside the viewport.</li>
+          <li><strong>Interact:</strong> Click on interactive items (highlighted in cyan/red border) with the cursor circle.</li>
+        </ul>
+
+        <h3 style="color: var(--accent-cyan); margin-top: 1rem;">Controls (VR Headset Mode)</h3>
+        <ul>
+          <li><strong>Look Around:</strong> Move your head.</li>
+          <li><strong>Interact:</strong> Align the center gaze cursor over the target objects for a short time to click, or squeeze the controller trigger.</li>
+        </ul>
+
+        <h3 style="color: var(--accent-cyan); margin-top: 1rem;">Training Objectives</h3>
+        <p>Complete safety tasks step-by-step across 6 distinct modules to gather experience points (XP). Maintain safe procedures to prevent injuries. Wrong/unsafe operations will deduct XP or force a scenario reload, accompanied by detailed educational descriptions of what went wrong.</p>
+      </div>
+
+      <button class="btn" onclick="UIController.closeAllOverlays()">Got It</button>
+    </div>
+  </div>
+
+  <!-- Progress Overlay -->
+  <div class="overlay" id="progress-overlay">
+    <div class="glass-panel overlay-content">
+      <button class="close-btn" aria-label="Close modal">&times;</button>
+      <h2>Training Records</h2>
+      <p class="subtitle" style="margin-bottom: 1rem;">Current Achievements</p>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-xp">0</div>
+          <div class="stat-lbl">Total XP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-grade">Needs Improvement</div>
+          <div class="stat-lbl">Evaluation Grade</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-modules">0 / 6</div>
+          <div class="stat-lbl">Completed Modules</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-hazards">0</div>
+          <div class="stat-lbl">Unsafe Actions</div>
+        </div>
+      </div>
+
+      <div style="text-align: left; margin: 1.5rem 0;">
+        <h3 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">Modules Checklist</h3>
+        <ul style="list-style: none; padding-left: 0.5rem; line-height: 2;">
+          <li id="list-module-1">○ Module 1: Introduction</li>
+          <li id="list-module-2">○ Module 2: PPE Selection</li>
+          <li id="list-module-3">○ Module 3: Hazard Inspection</li>
+          <li id="list-module-4">○ Module 4: Lockout Tagout (LOTO)</li>
+          <li id="list-module-5">○ Module 5: Electrical Fire</li>
+          <li id="list-module-6">○ Module 6: Electric Shock Rescue</li>
+        </ul>
+      </div>
+
+      <div class="btn-group" style="flex-direction: row; justify-content: center;">
+        <button class="btn btn-danger" id="btn-reset-progress">Reset Records</button>
+        <button class="btn" onclick="UIController.closeAllOverlays()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div class="overlay" id="settings-overlay">
+    <div class="glass-panel overlay-content">
+      <button class="close-btn" aria-label="Close modal">&times;</button>
+      <h2>System Settings</h2>
+      <p class="subtitle" style="margin-bottom: 1.5rem;">Configure Experience</p>
+
+      <div style="margin-bottom: 2rem;">
+        <div class="settings-row">
+          <label for="setting-master-vol">Master Volume</label>
+          <div class="slider-container">
+            <input type="range" id="setting-master-vol" min="0" max="100" value="50">
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label for="setting-sfx-vol">SFX Volume</label>
+          <div class="slider-container">
+            <input type="range" id="setting-sfx-vol" min="0" max="100" value="70">
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label for="setting-ambient-vol">Ambient Noise</label>
+          <div class="slider-container">
+            <input type="range" id="setting-ambient-vol" min="0" max="100" value="30">
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label for="setting-high-contrast">High Contrast Mode</label>
+          <input type="checkbox" id="setting-high-contrast" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+      </div>
+
+      <button class="btn" onclick="UIController.closeAllOverlays()">Apply Changes</button>
+    </div>
+  </div>
+
+  <!-- About Overlay -->
+  <div class="overlay" id="about-overlay">
+    <div class="glass-panel overlay-content">
+      <button class="close-btn" aria-label="Close modal">&times;</button>
+      <h2>About VR Simulator</h2>
+      <p class="subtitle" style="margin-bottom: 1.5rem;">Academic Safety Simulator</p>
+
+      <div style="text-align: left; line-height: 1.6; margin-bottom: 2rem;">
+        <p>This Virtual Reality Electrical Safety Training Simulator is designed for engineering laboratories, schools, and professional safety induction courses.</p>
+        <p style="margin-top: 1rem;">By providing immersive interactions, students gain concrete understanding of Lockout Tagout (LOTO) protocols, voltage thresholds, proper insulating tools, extinguishing agent types, and safety actions during cardiac arrests/electric shock emergencies.</p>
+        <p style="margin-top: 1rem; color: var(--text-secondary);">Built completely utilizing standard web technologies, allowing execution on standard smartphones, PCs, laptops, and standalone VR gear.</p>
+      </div>
+
+      <button class="btn" onclick="UIController.closeAllOverlays()">Close</button>
+    </div>
+  </div>
+
+  <!-- Load Scripts -->
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

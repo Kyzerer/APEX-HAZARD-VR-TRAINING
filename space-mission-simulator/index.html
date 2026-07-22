@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VR Space Mission Failure Simulator | Astronaut Emergency Training</title>
+  <meta name="description"
+    content="NASA-inspired VR Space Mission Failure Simulator. Train for spacecraft emergencies with immersive 3D scenarios, real-time telemetry, and performance evaluation." />
+  <meta name="keywords" content="space simulator, VR training, astronaut, emergency response, NASA, spacecraft" />
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Three.js CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ============================================================
+     LOADING SCREEN
+============================================================ -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <div class="loading-ring"></div>
+        <div class="loading-ring ring-2"></div>
+        <div class="loading-ring ring-3"></div>
+        <div class="loading-icon">🚀</div>
+      </div>
+      <h1 class="loading-title">MISSION CONTROL</h1>
+      <p class="loading-subtitle">Initializing Space Station Systems...</p>
+      <div class="loading-bar-container">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <div class="loading-status" id="loading-status">Loading assets...</div>
+      <div class="loading-percentage" id="loading-percentage">0%</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+     LANDING PAGE
+============================================================ -->
+  <section id="landing-page" class="page hidden">
+    <!-- Canvas for Three.js Background -->
+    <canvas id="landing-canvas"></canvas>
+
+    <!-- Overlay Content -->
+    <div class="landing-overlay">
+      <!-- Top Nav -->
+      <nav class="landing-nav">
+        <div class="nav-brand">
+          <span class="brand-icon">⬡</span>
+          <span class="brand-text">AEGIS<span class="brand-accent">SIM</span></span>
+        </div>
+        <div class="nav-links">
+          <a href="#" class="nav-link" data-target="features">Features</a>
+          <a href="#" class="nav-link" data-target="missions">Missions</a>
+          <a href="#" class="nav-link" data-target="stats">Statistics</a>
+          <button class="nav-btn" id="nav-login-btn">Mission Log</button>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          CLASSIFIED TRAINING SIMULATION
+        </div>
+        <h1 class="hero-title">
+          <span class="title-line-1">SPACE MISSION</span>
+          <span class="title-line-2">FAILURE SIMULATOR</span>
+        </h1>
+        <p class="hero-subtitle">
+          Train for the unthinkable. Master spacecraft emergencies in a<br>
+          photorealistic virtual environment powered by advanced AI.
+        </p>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number" data-target="10">0</span>
+            <span class="stat-label">Emergency Scenarios</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="2847">0</span>
+            <span class="stat-label">Trained Astronauts</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="99">0</span>
+            <span class="stat-label">% Mission Readiness</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="5">0</span>
+            <span class="stat-label">Space Agencies</span>
+          </div>
+        </div>
+
+        <div class="hero-buttons">
+          <button class="btn-primary" id="start-simulation-btn">
+            <span class="btn-icon">▶</span>
+            INITIATE SIMULATION
+            <span class="btn-glow"></span>
+          </button>
+          <button class="btn-secondary" id="learn-more-btn">
+            <span class="btn-icon">◎</span>
+            LEARN MORE
+          </button>
+        </div>
+
+        <!-- HUD Elements -->
+        <div class="hud-corner hud-tl">
+          <div class="hud-line hud-h"></div>
+          <div class="hud-line hud-v"></div>
+        </div>
+        <div class="hud-corner hud-tr">
+          <div class="hud-line hud-h"></div>
+          <div class="hud-line hud-v"></div>
+        </div>
+        <div class="hud-corner hud-bl">
+          <div class="hud-line hud-h"></div>
+          <div class="hud-line hud-v"></div>
+        </div>
+        <div class="hud-corner hud-br">
+          <div class="hud-line hud-h"></div>
+          <div class="hud-line hud-v"></div>
+        </div>
+      </div>
+
+      <!-- Features Section -->
+      <div class="features-section" id="features">
+        <div class="section-header">
+          <div class="section-tag">CAPABILITIES</div>
+          <h2 class="section-title">Advanced Simulation Systems</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3>Immersive 3D Environment</h3>
+            <p>Fully explorable spacecraft interior and exterior with physically-based rendering</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Real-Time Telemetry</h3>
+            <p>Live spacecraft systems monitoring with animated gauges and alert systems</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>AI Mission Assistant</h3>
+            <p>Intelligent guidance system providing contextual hints and protocol reminders</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🏆</div>
+            <h3>Certification System</h3>
+            <p>Generate official flight readiness certificates upon mission completion</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Performance Analytics</h3>
+            <p>Detailed mission debrief with score breakdown and improvement recommendations</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔬</div>
+            <h3>Emergency Physics</h3>
+            <p>Realistic fire, smoke, pressure loss and debris simulation systems</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Modules Preview -->
+      <div class="missions-section" id="missions">
+        <div class="section-header">
+          <div class="section-tag">TRAINING MODULES</div>
+          <h2 class="section-title">Emergency Scenarios</h2>
+        </div>
+        <div class="missions-grid">
+          <div class="mission-preview-card" data-difficulty="critical">
+            <div class="mp-icon">💨</div>
+            <div class="mp-info">
+              <h4>Oxygen Leak Response</h4>
+              <span class="mp-diff critical">CRITICAL</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="high">
+            <div class="mp-icon">🔥</div>
+            <div class="mp-info">
+              <h4>Fire Suppression</h4>
+              <span class="mp-diff high">HIGH</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="medium">
+            <div class="mp-icon">⚙️</div>
+            <div class="mp-info">
+              <h4>Equipment Failure</h4>
+              <span class="mp-diff medium">MEDIUM</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="critical">
+            <div class="mp-icon">🧑‍🚀</div>
+            <div class="mp-info">
+              <h4>EVA Emergency</h4>
+              <span class="mp-diff critical">CRITICAL</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="high">
+            <div class="mp-icon">☄️</div>
+            <div class="mp-info">
+              <h4>Orbital Debris Strike</h4>
+              <span class="mp-diff high">HIGH</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="critical">
+            <div class="mp-icon">📉</div>
+            <div class="mp-info">
+              <h4>Pressure Loss</h4>
+              <span class="mp-diff critical">CRITICAL</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="medium">
+            <div class="mp-icon">⚡</div>
+            <div class="mp-info">
+              <h4>Electrical Failure</h4>
+              <span class="mp-diff medium">MEDIUM</span>
+            </div>
+          </div>
+          <div class="mission-preview-card" data-difficulty="low">
+            <div class="mp-icon">🛰️</div>
+            <div class="mp-info">
+              <h4>Navigation Failure</h4>
+              <span class="mp-diff low">LOW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="landing-footer">
+        <div class="footer-brand">AEGISSIM © 2026 · Advanced Astronaut Training Systems</div>
+        <div class="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Security</a>
+          <a href="#">Contact</a>
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============================================================
+     ASTRONAUT NAME MODAL
+============================================================ -->
+  <div id="name-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-icon">👨‍🚀</span>
+        <h2>ASTRONAUT REGISTRATION</h2>
+      </div>
+      <p class="modal-subtitle">Enter your callsign to begin mission training</p>
+      <div class="modal-form">
+        <label for="astronaut-name">ASTRONAUT NAME / CALLSIGN</label>
+        <input type="text" id="astronaut-name" placeholder="e.g. Commander Alex Chen" maxlength="40" />
+        <div class="modal-buttons">
+          <button class="btn-secondary" id="modal-cancel-btn">CANCEL</button>
+          <button class="btn-primary" id="modal-confirm-btn">
+            <span class="btn-icon">▶</span>BEGIN MISSION
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+     DASHBOARD PAGE
+============================================================ -->
+  <section id="dashboard-page" class="page hidden">
+    <div class="dashboard-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span class="brand-icon">⬡</span>
+          <span class="brand-text">AEGIS<span class="brand-accent">SIM</span></span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="sidebar-link active" data-panel="missions" href="#">
+            <span class="sl-icon">◈</span> MISSIONS
+          </a>
+          <a class="sidebar-link" data-panel="progress" href="#">
+            <span class="sl-icon">◉</span> PROGRESS
+          </a>
+          <a class="sidebar-link" data-panel="leaderboard" href="#">
+            <span class="sl-icon">◆</span> LEADERBOARD
+          </a>
+          <a class="sidebar-link" data-panel="certificate" href="#">
+            <span class="sl-icon">◎</span> CERTIFICATE
+          </a>
+          <a class="sidebar-link" data-panel="settings" href="#">
+            <span class="sl-icon">◬</span> SETTINGS
+          </a>
+        </nav>
+
+        <!-- Astronaut Card -->
+        <div class="astronaut-card">
+          <div class="astronaut-avatar">👨‍🚀</div>
+          <div class="astronaut-info">
+            <div class="astronaut-name" id="sidebar-astronaut-name">Commander</div>
+            <div class="astronaut-rank" id="sidebar-astronaut-rank">Cadet</div>
+          </div>
+          <div class="astronaut-readiness">
+            <div class="readiness-label">READINESS</div>
+            <div class="readiness-bar">
+              <div class="readiness-fill" id="sidebar-readiness"></div>
+            </div>
+            <div class="readiness-pct" id="sidebar-readiness-pct">0%</div>
+          </div>
+        </div>
+
+        <button class="sidebar-back-btn" id="sidebar-back-btn">
+          ← BACK TO HOME
+        </button>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="dashboard-main">
+        <!-- Top Bar -->
+        <div class="dashboard-topbar">
+          <div class="topbar-left">
+            <h1 class="topbar-title" id="panel-title">MISSION CONTROL</h1>
+            <span class="topbar-sub">Emergency Training Dashboard</span>
+          </div>
+          <div class="topbar-right">
+            <div class="topbar-stat">
+              <span class="ts-label">MISSION TIME</span>
+              <span class="ts-value" id="total-time-display">00:00:00</span>
+            </div>
+            <div class="topbar-stat">
+              <span class="ts-label">COMPLETED</span>
+              <span class="ts-value" id="completed-count-display">0/10</span>
+            </div>
+            <button class="topbar-mute-btn" id="topbar-mute-btn" title="Toggle Audio">🔊</button>
+            <div class="topbar-theme-btn" id="topbar-theme-btn" title="Toggle Theme">◑</div>
+          </div>
+        </div>
+
+        <!-- Panel: Missions -->
+        <div class="panel active" id="panel-missions">
+          <div class="missions-filter">
+            <button class="filter-btn active" data-filter="all">ALL</button>
+            <button class="filter-btn" data-filter="critical">CRITICAL</button>
+            <button class="filter-btn" data-filter="high">HIGH</button>
+            <button class="filter-btn" data-filter="medium">MEDIUM</button>
+            <button class="filter-btn" data-filter="low">LOW</button>
+          </div>
+          <div class="mission-cards-grid" id="mission-cards-grid">
+            <!-- JS injected -->
+          </div>
+        </div>
+
+        <!-- Panel: Progress -->
+        <div class="panel" id="panel-progress">
+          <div class="progress-overview">
+            <div class="progress-hero">
+              <canvas id="progress-donut" width="200" height="200"></canvas>
+              <div class="donut-label">
+                <span class="donut-pct" id="donut-pct">0%</span>
+                <span class="donut-sub">Complete</span>
+              </div>
+            </div>
+            <div class="progress-stats-grid">
+              <div class="pstat-card">
+                <div class="pstat-icon">🏅</div>
+                <div class="pstat-val" id="pstat-missions">0</div>
+                <div class="pstat-label">Missions Done</div>
+              </div>
+              <div class="pstat-card">
+                <div class="pstat-icon">⏱️</div>
+                <div class="pstat-val" id="pstat-hours">0h 0m</div>
+                <div class="pstat-label">Training Hours</div>
+              </div>
+              <div class="pstat-card">
+                <div class="pstat-icon">⭐</div>
+                <div class="pstat-val" id="pstat-avg">--</div>
+                <div class="pstat-label">Avg. Score</div>
+              </div>
+              <div class="pstat-card">
+                <div class="pstat-icon">🏆</div>
+                <div class="pstat-val" id="pstat-best">--</div>
+                <div class="pstat-label">Best Score</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="achievements-section">
+            <h3 class="section-h3">ACHIEVEMENTS & BADGES</h3>
+            <div class="achievements-grid" id="achievements-grid">
+              <!-- JS injected -->
+            </div>
+          </div>
+
+          <div class="mission-history-section">
+            <h3 class="section-h3">MISSION HISTORY</h3>
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>MISSION</th>
+                    <th>DATE</th>
+                    <th>SCORE</th>
+                    <th>TIME</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody">
+                  <tr>
+                    <td colspan="5" class="no-data">No missions completed yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Leaderboard -->
+        <div class="panel" id="panel-leaderboard">
+          <div class="leaderboard-controls">
+            <input type="text" id="lb-search" placeholder="Search astronaut..." class="lb-search" />
+            <select id="lb-sort" class="lb-select">
+              <option value="score">Sort by Score</option>
+              <option value="time">Sort by Time</option>
+              <option value="readiness">Sort by Readiness</option>
+            </select>
+          </div>
+          <div class="leaderboard-table-wrap">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>RANK</th>
+                  <th>ASTRONAUT</th>
+                  <th>AGENCY</th>
+                  <th>TIME</th>
+                  <th>SCORE</th>
+                  <th>READINESS</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-tbody">
+                <!-- JS injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel: Certificate -->
+        <div class="panel" id="panel-certificate">
+          <div class="certificate-container">
+            <div class="certificate" id="certificate">
+              <div class="cert-header">
+                <div class="cert-logo">⬡ AEGISSIM</div>
+                <div class="cert-agency">Advanced Astronaut Emergency Training Authority</div>
+              </div>
+              <div class="cert-body">
+                <div class="cert-label">FLIGHT READINESS CERTIFICATE</div>
+                <div class="cert-issued-to">This certifies that</div>
+                <div class="cert-name" id="cert-name">Commander ---</div>
+                <div class="cert-has-completed">has successfully completed all required emergency training protocols and
+                  demonstrated mission readiness in accordance with international spaceflight standards.</div>
+                <div class="cert-details-grid">
+                  <div class="cert-detail">
+                    <div class="cd-label">DATE ISSUED</div>
+                    <div class="cd-value" id="cert-date">---</div>
+                  </div>
+                  <div class="cert-detail">
+                    <div class="cd-label">READINESS SCORE</div>
+                    <div class="cd-value" id="cert-score">---</div>
+                  </div>
+                  <div class="cert-detail">
+                    <div class="cd-label">MODULES COMPLETED</div>
+                    <div class="cd-value" id="cert-modules">---</div>
+                  </div>
+                  <div class="cert-detail">
+                    <div class="cd-label">TOTAL TRAINING TIME</div>
+                    <div class="cd-value" id="cert-time">---</div>
+                  </div>
+                </div>
+              </div>
+              <div class="cert-footer">
+                <div class="cert-sig">
+                  <div class="sig-line">___________________________</div>
+                  <div class="sig-name">Flight Director, AEGISSIM</div>
+                </div>
+                <div class="cert-stamp">✦ CERTIFIED ✦</div>
+              </div>
+            </div>
+            <div class="cert-actions">
+              <button class="btn-primary" id="cert-print-btn">🖨️ PRINT CERTIFICATE</button>
+              <div class="cert-note" id="cert-note">Complete all missions to unlock your certificate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Settings -->
+        <div class="panel" id="panel-settings">
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h3 class="settings-h3">🎮 CONTROLS</h3>
+              <div class="setting-row">
+                <span>Movement Speed</span>
+                <input type="range" min="1" max="10" value="5" id="setting-speed" class="setting-slider" />
+              </div>
+              <div class="setting-row">
+                <span>Mouse Sensitivity</span>
+                <input type="range" min="1" max="10" value="5" id="setting-sensitivity" class="setting-slider" />
+              </div>
+              <div class="setting-row">
+                <span>Invert Y-Axis</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-invert-y" class="toggle-input" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3 class="settings-h3">🔊 AUDIO</h3>
+              <div class="setting-row">
+                <span>Master Volume</span>
+                <input type="range" min="0" max="100" value="70" id="setting-master-vol" class="setting-slider" />
+              </div>
+              <div class="setting-row">
+                <span>SFX Volume</span>
+                <input type="range" min="0" max="100" value="80" id="setting-sfx-vol" class="setting-slider" />
+              </div>
+              <div class="setting-row">
+                <span>Enable Audio</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-audio" class="toggle-input" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3 class="settings-h3">🖥️ GRAPHICS</h3>
+              <div class="setting-row">
+                <span>Quality</span>
+                <select id="setting-quality" class="setting-select">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="ultra">Ultra</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <span>Bloom Effect</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-bloom" class="toggle-input" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span>Particle Effects</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-particles" class="toggle-input" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3 class="settings-h3">♿ ACCESSIBILITY</h3>
+              <div class="setting-row">
+                <span>Font Size</span>
+                <select id="setting-font-size" class="setting-select">
+                  <option value="small">Small</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <span>High Contrast</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-high-contrast" class="toggle-input" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span>Reduce Motion</span>
+                <label class="toggle-label">
+                  <input type="checkbox" id="setting-reduce-motion" class="toggle-input" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="settings-footer">
+            <button class="btn-secondary" id="reset-progress-btn">⚠️ RESET PROGRESS</button>
+            <button class="btn-primary" id="save-settings-btn">SAVE SETTINGS</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============================================================
+     SIMULATION PAGE
+============================================================ -->
+  <section id="simulation-page" class="page hidden">
+    <!-- THREE.JS Canvas -->
+    <canvas id="sim-canvas"></canvas>
+
+    <!-- MISSION BRIEFING OVERLAY -->
+    <div id="briefing-overlay" class="sim-overlay">
+      <div class="briefing-box">
+        <div class="briefing-header">
+          <div class="briefing-mission-tag" id="briefing-tag">MISSION ALPHA-1</div>
+          <h2 class="briefing-title" id="briefing-title">OXYGEN LEAK RESPONSE</h2>
+          <div class="briefing-difficulty" id="briefing-difficulty">
+            <span class="diff-dot"></span> CRITICAL
+          </div>
+        </div>
+        <div class="briefing-content">
+          <div class="briefing-col">
+            <h4>SITUATION</h4>
+            <p id="briefing-situation">A micro-fracture has been detected in the primary oxygen storage system...</p>
+          </div>
+          <div class="briefing-col">
+            <h4>OBJECTIVES</h4>
+            <ul id="briefing-objectives">
+              <li>Detect pressure anomaly</li>
+              <li>Locate and seal the leak</li>
+              <li>Restore oxygen levels</li>
+            </ul>
+          </div>
+        </div>
+        <div class="briefing-meta">
+          <div class="meta-item"><span class="meta-lbl">DURATION</span><span id="briefing-duration">8 min</span></div>
+          <div class="meta-item"><span class="meta-lbl">DIFFICULTY</span><span id="briefing-diff">CRITICAL</span></div>
+          <div class="meta-item"><span class="meta-lbl">MAX SCORE</span><span id="briefing-max-score">1000</span></div>
+        </div>
+        <div class="briefing-controls-hint">
+          <div class="hint-item"><kbd>W A S D</kbd> Move</div>
+          <div class="hint-item"><kbd>Mouse</kbd> Look</div>
+          <div class="hint-item"><kbd>E</kbd> Interact</div>
+          <div class="hint-item"><kbd>I</kbd> Inventory</div>
+          <div class="hint-item"><kbd>ESC</kbd> Pause</div>
+          <div class="hint-item"><kbd>V</kbd> View Mode</div>
+        </div>
+        <div class="briefing-actions">
+          <button class="btn-secondary" id="briefing-back-btn">← ABORT MISSION</button>
+          <button class="btn-primary" id="briefing-start-btn">
+            <span class="btn-icon">▶</span>LAUNCH SIMULATION
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME HUD -->
+    <div id="game-hud" class="game-hud hidden">
+      <!-- Top Bar -->
+      <div class="hud-top-bar">
+        <div class="hud-mission-info">
+          <span class="hud-mission-name" id="hud-mission-name">OXYGEN LEAK</span>
+          <span class="hud-mission-phase" id="hud-mission-phase">PHASE 1</span>
+        </div>
+        <div class="hud-timer-block">
+          <div class="hud-timer-label">MISSION TIME</div>
+          <div class="hud-timer" id="hud-timer">08:00</div>
+        </div>
+        <div class="hud-score-block">
+          <div class="hud-score-label">SCORE</div>
+          <div class="hud-score" id="hud-score">0</div>
+        </div>
+      </div>
+
+      <!-- Telemetry Panel -->
+      <div class="hud-telemetry">
+        <div class="telem-title">⬡ SYSTEMS TELEMETRY</div>
+        <div class="telem-grid">
+          <div class="telem-item" id="telem-o2">
+            <div class="telem-label">O₂ LEVEL</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-o2"></div>
+            </div>
+            <div class="telem-value" id="tval-o2">100%</div>
+          </div>
+          <div class="telem-item" id="telem-pressure">
+            <div class="telem-label">PRESSURE</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-pressure"></div>
+            </div>
+            <div class="telem-value" id="tval-pressure">101 kPa</div>
+          </div>
+          <div class="telem-item" id="telem-co2">
+            <div class="telem-label">CO₂</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-co2"></div>
+            </div>
+            <div class="telem-value" id="tval-co2">0.04%</div>
+          </div>
+          <div class="telem-item" id="telem-temp">
+            <div class="telem-label">TEMP</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-temp"></div>
+            </div>
+            <div class="telem-value" id="tval-temp">22°C</div>
+          </div>
+          <div class="telem-item" id="telem-hull">
+            <div class="telem-label">HULL</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-hull"></div>
+            </div>
+            <div class="telem-value" id="tval-hull">100%</div>
+          </div>
+          <div class="telem-item" id="telem-battery">
+            <div class="telem-label">BATTERY</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-battery"></div>
+            </div>
+            <div class="telem-value" id="tval-battery">100%</div>
+          </div>
+          <div class="telem-item" id="telem-hr">
+            <div class="telem-label">HEART RATE</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-hr"></div>
+            </div>
+            <div class="telem-value" id="tval-hr">72 BPM</div>
+          </div>
+          <div class="telem-item" id="telem-suit">
+            <div class="telem-label">SUIT O₂</div>
+            <div class="telem-bar-wrap">
+              <div class="telem-bar telem-bar-suit"></div>
+            </div>
+            <div class="telem-value" id="tval-suit">100%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objectives Panel -->
+      <div class="hud-objectives">
+        <div class="obj-title">OBJECTIVES</div>
+        <ul id="objectives-list" class="objectives-list">
+          <!-- JS injected -->
+        </ul>
+      </div>
+
+      <!-- Interaction Prompt -->
+      <div id="interaction-prompt" class="interaction-prompt hidden">
+        <div class="ip-key">E</div>
+        <div class="ip-text" id="ip-text">Interact</div>
+      </div>
+
+      <!-- Crosshair -->
+      <div class="crosshair">
+        <div class="ch-h"></div>
+        <div class="ch-v"></div>
+        <div class="ch-dot"></div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="inventory-bar">
+        <div class="inv-slot" data-slot="0">
+          <div class="inv-slot-key">1</div>
+          <div class="inv-slot-icon" id="inv-0">—</div>
+        </div>
+        <div class="inv-slot" data-slot="1">
+          <div class="inv-slot-key">2</div>
+          <div class="inv-slot-icon" id="inv-1">—</div>
+        </div>
+        <div class="inv-slot" data-slot="2">
+          <div class="inv-slot-key">3</div>
+          <div class="inv-slot-icon" id="inv-2">—</div>
+        </div>
+        <div class="inv-slot" data-slot="3">
+          <div class="inv-slot-key">4</div>
+          <div class="inv-slot-icon" id="inv-3">—</div>
+        </div>
+        <div class="inv-slot" data-slot="4">
+          <div class="inv-slot-key">5</div>
+          <div class="inv-slot-icon" id="inv-4">—</div>
+        </div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div id="alert-banner" class="alert-banner hidden">
+        <span class="alert-icon">⚠</span>
+        <span id="alert-text">OXYGEN CRITICAL</span>
+        <span class="alert-icon">⚠</span>
+      </div>
+
+      <!-- HUD Buttons -->
+      <div class="hud-buttons">
+        <button class="hud-btn" id="hud-pause-btn" title="Pause (ESC)">⏸</button>
+        <button class="hud-btn" id="hud-ai-btn" title="AI Assistant">🤖</button>
+        <button class="hud-btn" id="hud-map-btn" title="Station Map">🗺️</button>
+      </div>
+
+      <!-- View Mode Indicator -->
+      <div class="view-mode-indicator" id="view-mode-indicator">FPS</div>
+
+      <!-- Screen Effects -->
+      <div id="screen-vignette" class="screen-vignette"></div>
+      <div id="screen-flash" class="screen-flash hidden"></div>
+      <div id="smoke-overlay" class="smoke-overlay hidden"></div>
+    </div>
+
+    <!-- PAUSE MENU -->
+    <div id="pause-menu" class="sim-overlay hidden">
+      <div class="pause-box">
+        <h2>SIMULATION PAUSED</h2>
+        <div class="pause-info" id="pause-info">Mission: Oxygen Leak</div>
+        <div class="pause-buttons">
+          <button class="btn-primary" id="resume-btn">▶ RESUME</button>
+          <button class="btn-secondary" id="restart-btn">↺ RESTART</button>
+          <button class="btn-secondary" id="quit-btn">✕ QUIT MISSION</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ASSISTANT PANEL -->
+    <div id="ai-panel" class="ai-panel hidden">
+      <div class="ai-header">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-info">
+          <div class="ai-name">NEXUS AI</div>
+          <div class="ai-status">Mission Advisor</div>
+        </div>
+        <button class="ai-close" id="ai-close-btn">✕</button>
+      </div>
+      <div class="ai-messages" id="ai-messages">
+        <div class="ai-msg ai-msg-system">
+          <span>NEXUS AI Online. How can I assist your mission?</span>
+        </div>
+      </div>
+      <div class="ai-hints" id="ai-hints">
+        <!-- Context hints injected here -->
+      </div>
+    </div>
+
+    <!-- MISSION COMPLETE OVERLAY -->
+    <div id="mission-complete" class="sim-overlay hidden">
+      <div class="complete-box">
+        <div class="complete-header">
+          <div class="complete-badge" id="complete-badge">🏆</div>
+          <h2 class="complete-title" id="complete-title">MISSION COMPLETE</h2>
+          <div class="complete-grade" id="complete-grade">A+</div>
+        </div>
+        <div class="complete-stats">
+          <div class="cs-item">
+            <div class="cs-label">FINAL SCORE</div>
+            <div class="cs-value" id="cs-score">950</div>
+          </div>
+          <div class="cs-item">
+            <div class="cs-label">TIME TAKEN</div>
+            <div class="cs-value" id="cs-time">5:32</div>
+          </div>
+          <div class="cs-item">
+            <div class="cs-label">OBJECTIVES</div>
+            <div class="cs-value" id="cs-objectives">5/5</div>
+          </div>
+          <div class="cs-item">
+            <div class="cs-label">ACCURACY</div>
+            <div class="cs-value" id="cs-accuracy">98%</div>
+          </div>
+        </div>
+        <div class="complete-breakdown" id="complete-breakdown">
+          <!-- Score breakdown -->
+        </div>
+        <div class="complete-actions">
+          <button class="btn-secondary" id="replay-btn">↺ REPLAY</button>
+          <button class="btn-primary" id="quiz-btn">
+            📝 MISSION DEBRIEF QUIZ
+          </button>
+          <button class="btn-secondary" id="next-mission-btn">NEXT MISSION →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSION FAILED OVERLAY -->
+    <div id="mission-failed" class="sim-overlay hidden">
+      <div class="failed-box">
+        <div class="failed-icon">💀</div>
+        <h2 class="failed-title">MISSION FAILED</h2>
+        <div class="failed-reason" id="failed-reason">Critical system failure</div>
+        <div class="failed-score" id="failed-score">Score: 0</div>
+        <div class="failed-actions">
+          <button class="btn-primary" id="failed-retry-btn">↺ RETRY MISSION</button>
+          <button class="btn-secondary" id="failed-quit-btn">← DASHBOARD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ OVERLAY -->
+    <div id="quiz-overlay" class="sim-overlay hidden">
+      <div class="quiz-box">
+        <div class="quiz-header">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+          </div>
+          <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 7</div>
+        </div>
+        <div class="quiz-body">
+          <div class="quiz-question" id="quiz-question">What is the first step when detecting a cabin pressure loss?
+          </div>
+          <div class="quiz-options" id="quiz-options">
+            <!-- JS injected -->
+          </div>
+          <div class="quiz-feedback" id="quiz-feedback" style="display:none"></div>
+        </div>
+        <div class="quiz-actions">
+          <div class="quiz-score-display">Score: <span id="quiz-current-score">0</span></div>
+          <button class="btn-primary" id="quiz-next-btn" disabled>NEXT →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ RESULTS -->
+    <div id="quiz-results" class="sim-overlay hidden">
+      <div class="quiz-results-box">
+        <div class="qr-icon" id="qr-icon">🎓</div>
+        <h2>DEBRIEF COMPLETE</h2>
+        <div class="qr-grade" id="qr-grade">A</div>
+        <div class="qr-score" id="qr-score">7 / 7 Correct</div>
+        <div class="qr-breakdown" id="qr-breakdown"></div>
+        <div class="qr-actions">
+          <button class="btn-secondary" id="qr-dashboard-btn">← DASHBOARD</button>
+          <button class="btn-primary" id="qr-next-btn">NEXT MISSION →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Script Entry -->
+  <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
